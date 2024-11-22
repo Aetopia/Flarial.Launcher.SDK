@@ -1,7 +1,10 @@
 namespace Flarial.Launcher;
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
@@ -20,9 +23,9 @@ public static class Client
 
     static readonly object Object = new();
 
-    static readonly (string, string) Release = new("https://raw.githubusercontent.com/flarialmc/newcdn/main/dll/latest.dll", @"Client\Flarial.Client.Release.dll");
+    static readonly (string RequestUri, string Path) Release = new("https://raw.githubusercontent.com/flarialmc/newcdn/main/dll/latest.dll", @"Client\Flarial.Client.Release.dll");
 
-    static readonly (string, string) Beta = new("https://raw.githubusercontent.com/flarialmc/newcdn/main/dll/beta.dll", @"Client\Flarial.Client.Beta.dll");
+    static readonly (string RequestUri, string Path) Beta = new("https://raw.githubusercontent.com/flarialmc/newcdn/main/dll/beta.dll", @"Client\Flarial.Client.Beta.dll");
 
     const string Hashes = "https://raw.githubusercontent.com/flarialmc/newcdn/main/dll_hashes.json";
 
@@ -56,6 +59,20 @@ public static class Client
         }
     }
 
+    static async Task<App> LoadedAsync(string path)
+    {
+        path = Path.GetFullPath(path);
+        var app = await Game.GetAsync();
+        using var process = app.Process;
+
+        if (process is not null)
+        {
+            foreach (string value in process.Modules.Cast<ProcessModule>().Select(_ => _.FileName))
+                if (path.Equals(value, StringComparison.OrdinalIgnoreCase)) app.Terminate();
+        }
+        return app;
+    }
+
     /// <summary>
     /// Asynchronously download Flarial Client's dynamic link library.
     /// </summary>
@@ -65,7 +82,11 @@ public static class Client
     public static async Task DownloadAsync(bool _ = false, Action<int> action = default)
     {
         var (requestUri, path) = _ ? Beta : Release;
-        if (!await VerifyAsync(path, _)) await Global.HttpClient.GetAsync(requestUri, path, action);
+        if (!await VerifyAsync(path, _))
+        {
+            await Task.Run(async () => await LoadedAsync(path));
+            await Global.HttpClient.GetAsync(requestUri, path, action);
+        }
     }
 
     /// <summary>
@@ -73,5 +94,9 @@ public static class Client
     /// </summary>
     /// <param name="_">Specify <c>true</c> to use Flarial Client's Beta.</param>
     /// <returns></returns>
-    public static async Task ActivateAsync(bool _ = false) => await Injector.InjectAsync((_ ? Beta : Release).Item2);
+    public static async Task LaunchAsync(bool _ = false) => await Task.Run(async () =>
+    {
+        await LoadedAsync((_ ? Release : Beta).Path);
+        Injector.Inject(await Game.Launch(), (_ ? Beta : Release).Path);
+    });
 }

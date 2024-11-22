@@ -30,7 +30,7 @@ public static class Injector
         finally { FreeLibrary(hModule); }
     }
 
-    static void Inject(int processId, string path)
+    internal static void Inject(int processId, string path)
     {
         FileInfo info = new(path = Path.GetFullPath(path));
         var security = info.GetAccessControl();

@@ -1,18 +1,22 @@
 namespace Minecraft.UWP;
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Windows.System;
+using Windows.System.Diagnostics;
 
 sealed class App
 {
     App(AppDiagnosticInfo _) => AppDiagnosticInfo = _;
 
     readonly AppDiagnosticInfo AppDiagnosticInfo;
+
+    IEnumerable<ProcessDiagnosticInfo> ProcessDiagnosticInfos => AppDiagnosticInfo.GetResourceGroups().SelectMany(_ => _.GetProcessDiagnosticInfos());
 
     static readonly ApplicationActivationManager ApplicationActivationManager = new();
 
@@ -24,7 +28,7 @@ sealed class App
 
     const int AO_NOERRORUI = 0x00000002;
 
-    public static async Task<App> GetAsync(string packageFamilyName)
+    internal static async Task<App> GetAsync(string packageFamilyName)
     {
         var _ = (await AppDiagnosticInfo.RequestInfoForPackageAsync(packageFamilyName)).FirstOrDefault();
         if (_ is null) throw ERROR_INSTALL_PACKAGE_NOT_FOUND;
@@ -32,16 +36,25 @@ sealed class App
         return new(_);
     }
 
-    public bool Running => AppDiagnosticInfo.GetResourceGroups().SelectMany(_ => _.GetProcessDiagnosticInfos()).Any();
+    internal Process Process
+    {
+        get
+        {
+            var _ = ProcessDiagnosticInfos.FirstOrDefault(); if (_ is null) return null;
+            return Process.GetProcessById((int)_.ProcessId);
+        }
+    }
 
-    public Package Package => AppDiagnosticInfo.AppInfo.Package;
+    internal bool Running => ProcessDiagnosticInfos.Any();
 
-    public Process Launch()
+    internal Package Package => AppDiagnosticInfo.AppInfo.Package;
+
+    internal Process Launch()
     {
         PackageDebugSettings.EnableDebugging(Package.Id.FullName, default, default);
         ApplicationActivationManager.ActivateApplication(AppDiagnosticInfo.AppInfo.AppUserModelId, default, AO_NOERRORUI, out var processId);
         return Process.GetProcessById(processId);
     }
 
-    public void Terminate() => PackageDebugSettings.TerminateAllProcesses(Package.Id.FullName);
+    internal void Terminate() => PackageDebugSettings.TerminateAllProcesses(Package.Id.FullName);
 }
