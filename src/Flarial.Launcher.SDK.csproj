@@ -8,6 +8,7 @@
     <Optimize>true</Optimize>
     <PublishRelease>true</PublishRelease>
 
+    <DebugType>none</DebugType>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <AssemblyTitle>Flarial Launcher SDK</AssemblyTitle>
     <Product>Flarial Launcher SDK</Product>
