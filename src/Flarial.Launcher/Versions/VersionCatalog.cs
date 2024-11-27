@@ -12,6 +12,10 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using Windows.Management.Deployment;
 
+
+/// <summary>
+/// Provides methods to manage a version catalog compatible with Flarial Client.
+/// </summary>
 public sealed class VersionCatalog : IEnumerable<string>
 {
     const string Releases = "https://raw.githubusercontent.com/dummydummy123456/BedrockDB/main/releases.json";
@@ -40,9 +44,9 @@ public sealed class VersionCatalog : IEnumerable<string>
     }
 
     /// <summary>
-    /// Asynchronously gets a list of Minecraft versions supported by Flarial Client.
+    /// Asynchronously gets a version catalog supported by Flarial Client.
     /// </summary>
-    /// <returns>A list of Minecraft versions supported by Flarial Client.</returns>
+    /// <returns>A catalog of versions supported by Flarial Client.</returns>
     public static async Task<VersionCatalog> GetAsync()
     {
         Dictionary<string, string> @object = [];
@@ -91,16 +95,10 @@ public sealed class VersionCatalog : IEnumerable<string>
         return new(XElement.Parse(await message.Content.ReadAsStringAsync()).Descendants().FirstOrDefault(_ => _.Value.StartsWith("http://tlu.dl.delivery.mp.microsoft.com", StringComparison.Ordinal)).Value);
     }
 
-    static readonly PackageManager PackageManager = new();
-
-    static readonly AddPackageOptions Options = new()
-    {
-        ForceAppShutdown = true,
-        ForceUpdateFromAnyVersion = true
-    };
-
-    public async Task<VersionCatalogItem> ItemAsync(string _)
-    {
-        return new(PackageManager.AddPackageByUriAsync(await UriAsync(Object[_]), Options));
-    }
+    /// <summary>
+    /// Asynchronously starts installation of the specified version.
+    /// </summary>
+    /// <param name="_">The version to be installed.</param>
+    /// <returns>An object that represents installation progress.</returns>
+    public async Task<VersionCatalogItem> GetAsync(string _, Action<int> action = default) => new(Global.PackageManager.AddPackageByUriAsync(await UriAsync(Object[_]), Global.AddPackageOptions), action);
 }

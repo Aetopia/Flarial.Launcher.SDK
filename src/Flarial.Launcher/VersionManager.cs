@@ -16,6 +16,7 @@ using Windows.Management.Deployment;
 /// <summary>
 /// Represents a collection of Minecraft versions.
 /// </summary>
+[Obsolete]
 public sealed class VersionEntries : IEnumerable<string>
 {
     readonly Dictionary<string, string> _;
@@ -44,13 +45,10 @@ public sealed class VersionEntries : IEnumerable<string>
 /// <summary>
 /// Represents a version of Minecraft.
 /// </summary>
+[Obsolete]
 public sealed class VersionEntry
 {
-    static readonly PackageManager PackageManager = new();
-
     internal string Version, UpdateId;
-
-    readonly AddPackageOptions Options = new() { ForceAppShutdown = true, ForceUpdateFromAnyVersion = true };
 
     const string Store = "https://fe3cr.delivery.mp.microsoft.com/ClientWebService/client.asmx/secured";
 
@@ -81,7 +79,7 @@ public sealed class VersionEntry
 
         var value = XElement.Parse(await message.Content.ReadAsStringAsync()).Descendants().FirstOrDefault(_ => _.Value.StartsWith("http://tlu.dl.delivery.mp.microsoft.com", StringComparison.Ordinal)).Value;
 
-        var operation = PackageManager.AddPackageByUriAsync(new Uri(value), Options);
+        var operation = Global.PackageManager.AddPackageByUriAsync(new Uri(value), Global.AddPackageOptions);
         try
         {
             if (action is not null) await operation.AsTask(token, new Progress<DeploymentProgress>((_) => { if (_.state is DeploymentProgressState.Processing) action((int)_.percentage); }));
@@ -91,6 +89,10 @@ public sealed class VersionEntry
     }
 }
 
+/// <summary>
+/// Provides methods to manage Minecraft versions compatible with Flarial Client.
+/// </summary>
+[Obsolete]
 public static class VersionManager
 {
     const string Releases = "https://raw.githubusercontent.com/dummydummy123456/BedrockDB/main/releases.json";
