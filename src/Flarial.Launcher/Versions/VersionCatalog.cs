@@ -99,6 +99,7 @@ public sealed class VersionCatalog : IEnumerable<string>
     /// Asynchronously starts installation of the specified version.
     /// </summary>
     /// <param name="_">The version to be installed.</param>
+    /// <param name="action">Callback for installation progress.</param>
     /// <returns>An object that represents installation progress.</returns>
     public async Task<VersionCatalogItem> GetAsync(string _, Action<int> action = default) => new(Global.PackageManager.AddPackageByUriAsync(await UriAsync(Object[_]), Global.AddPackageOptions), action);
 }
