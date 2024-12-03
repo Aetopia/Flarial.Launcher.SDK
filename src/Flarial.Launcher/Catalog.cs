@@ -91,7 +91,11 @@ public sealed class Catalog : IEnumerable<string>
     {
         using StringContent content = new(string.Format(await GetExtendedUpdateInfo2(), _, '1'), Encoding.UTF8, "application/soap+xml");
         using var message = await Global.HttpClient.PostAsync(Store, content); message.EnsureSuccessStatusCode();
-        return new(XElement.Parse(await message.Content.ReadAsStringAsync()).Descendants().FirstOrDefault(_ => _.Value.StartsWith("http://tlu.dl.delivery.mp.microsoft.com", StringComparison.Ordinal)).Value);
+        return new(await Task.Run(async () =>
+        {
+            return XElement.Parse(await message.Content.ReadAsStringAsync()).Descendants().
+            FirstOrDefault(_ => _.Value.StartsWith("http://tlu.dl.delivery.mp.microsoft.com", StringComparison.Ordinal)).Value;
+        }));
     }
 
     static readonly PackageManager PackageManager = new();
@@ -105,5 +109,15 @@ public sealed class Catalog : IEnumerable<string>
     /// <summary>
     /// Asynchronously starts the installation of a version.
     /// </summary>
+    /// <param name="_">The version to be installed.</param>
+    /// <param name="action">Callback for installation progress.</param>
+    /// <returns>An installation request.</returns>
     public async Task<Request> InstallAsync(string _, Action<int> action = default) => new(PackageManager.AddPackageByUriAsync(await UriAsync(Dictionary[_]), Options), action);
+
+    /// <summary>
+    /// Determines whether the specified version exists.
+    /// </summary>
+    /// <param name="_">The version to check for.</param>
+    /// <returns>If the specified version exists then <c>true</c> else <c>false</c>.</returns>
+    public bool Contains(string _) => Dictionary.ContainsKey(_);
 }
