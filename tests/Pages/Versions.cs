@@ -1,11 +1,9 @@
 using System;
 using System.Drawing;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Flarial.Launcher;
-using Windows.Gaming.Input;
 
 sealed class Versions : TabPage
 {

@@ -78,7 +78,6 @@ public static class Client
     /// </summary>
     /// <param name="_">Specify <c>true</c> to download Flarial Client's Beta.</param>
     /// <param name="action">Callback for download progress.</param>
-    /// <returns></returns>
     public static async Task DownloadAsync(bool _ = false, Action<int> action = default)
     {
         var (requestUri, path) = _ ? Beta : Release;
@@ -93,7 +92,6 @@ public static class Client
     /// Asynchronously launch Minecraft &#38; inject Flarial Client's dynamic link library.
     /// </summary>
     /// <param name="_">Specify <c>true</c> to use Flarial Client's Beta.</param>
-    /// <returns></returns>
     public static async Task LaunchAsync(bool _ = false) => await Task.Run(async () =>
     {
         await LoadedAsync((_ ? Release : Beta).Path);
