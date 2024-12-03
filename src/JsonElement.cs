@@ -21,9 +21,9 @@ readonly struct JsonElement : IEnumerable<JsonElement>
 
     enum JsonType { Value, Array, Object }
 
-    public readonly JsonElement this[string name] => Type is JsonType.Object ? new(Element.Elements().First(_ => Name(_) == name)) : throw new NotSupportedException();
+    internal readonly JsonElement this[string name] => Type is JsonType.Object ? new(Element.Elements().First(_ => Name(_) == name)) : throw new NotSupportedException();
 
-    public readonly JsonElement this[int index] => Type is JsonType.Array ? new(Element.Elements().ElementAt(index)) : throw new NotSupportedException();
+    internal readonly JsonElement this[int index] => Type is JsonType.Array ? new(Element.Elements().ElementAt(index)) : throw new NotSupportedException();
 
     public readonly string Value => Type is JsonType.Value ? Element.Value : throw new NotSupportedException();
 

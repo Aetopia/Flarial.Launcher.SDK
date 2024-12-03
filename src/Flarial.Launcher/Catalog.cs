@@ -1,4 +1,4 @@
-namespace Flarial.Launcher.Versions;
+namespace Flarial.Launcher;
 
 using System;
 using System.Collections;
@@ -7,12 +7,18 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Windows.Foundation;
 using Windows.Management.Deployment;
 
-public sealed class VersionCatalog : IEnumerable<string>
+/// <summary>
+/// Provides methods to manage Minecraft versions compatible with Flarial Client.
+/// </summary>
+public sealed class Catalog : IEnumerable<string>
 {
     const string Releases = "https://raw.githubusercontent.com/dummydummy123456/BedrockDB/main/releases.json";
 
@@ -40,12 +46,12 @@ public sealed class VersionCatalog : IEnumerable<string>
     }
 
     /// <summary>
-    /// Asynchronously gets a list of Minecraft versions supported by Flarial Client.
+    /// Asynchronously gets a list of versions.
     /// </summary>
-    /// <returns>A list of Minecraft versions supported by Flarial Client.</returns>
-    public static async Task<VersionCatalog> GetAsync()
+    /// <returns>A list of versions supported by Flarial Client.</returns>
+    public static async Task<Catalog> GetAsync()
     {
-        Dictionary<string, string> @object = [];
+        Dictionary<string, string> dictionary = [];
         var set = (await Global.HttpClient.GetStringAsync(Supported)).Split('\n').ToHashSet();
 
         foreach (var _ in await JsonElement.ParseAsync(await Global.HttpClient.GetStreamAsync(Releases)))
@@ -57,31 +63,31 @@ public sealed class VersionCatalog : IEnumerable<string>
             var key = Version(identity[1]);
             if (!set.Contains(key)) continue;
 
-            if (!@object.ContainsKey(key)) @object.Add(key, substrings[0]);
-            else @object[key] = substrings[0];
+            if (!dictionary.ContainsKey(key)) dictionary.Add(key, substrings[0]);
+            else dictionary[key] = substrings[0];
         }
 
-        return new(@object);
+        return new(dictionary);
     }
 
-    public IEnumerator<string> GetEnumerator() => Object.Keys.GetEnumerator();
+    public IEnumerator<string> GetEnumerator() => Dictionary.Keys.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    readonly Dictionary<string, string> Object;
+    readonly Dictionary<string, string> Dictionary;
 
-    static string String;
+    static string Content;
 
-    VersionCatalog(Dictionary<string, string> _) => Object = _;
+    Catalog(Dictionary<string, string> _) => Dictionary = _;
 
     static async Task<string> GetExtendedUpdateInfo2()
     {
-        if (String is null)
+        if (Content is null)
         {
             using StreamReader reader = new(Assembly.GetExecutingAssembly().GetManifestResourceStream("GetExtendedUpdateInfo2.xml"));
-            String = await reader.ReadToEndAsync();
+            Content = await reader.ReadToEndAsync();
         }
-        return String;
+        return Content;
     }
 
     static async Task<Uri> UriAsync(string _)
@@ -99,8 +105,8 @@ public sealed class VersionCatalog : IEnumerable<string>
         ForceUpdateFromAnyVersion = true
     };
 
-    public async Task<VersionCatalogItem> ItemAsync(string _)
-    {
-        return new(PackageManager.AddPackageByUriAsync(await UriAsync(Object[_]), Options));
-    }
+    /// <summary>
+    /// Asynchronously starts the installation of a version.
+    /// </summary>
+    public async Task<Request> InstallAsync(string _, Action<int> action = default) => new(PackageManager.AddPackageByUriAsync(await UriAsync(Dictionary[_]), Options), action);
 }
